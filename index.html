@@ -111,10 +111,12 @@
   <button class="cost-btn" data-cost="2">2</button>
   <button class="cost-btn" data-cost="3">3</button>
   <button class="cost-btn" data-cost="4">4</button>
+  <button class="cost-btn" data-cost="5">5</button>
 </div>
 
-  <input type="text" id="search" placeholder="カード名・省略文で検索…">
-</div>
+  <div class="search-wrap">
+    <input type="text" id="search" placeholder="カード名・省略文で検索…">
+  </div>
 
 <div class="count" id="count"></div>
 
@@ -217,7 +219,7 @@ const CARDS = [
   {name:'迅速',        type:'skill', rarity:'epic',      cost:0, short:'ドロー 2（1T1度）',   desc:'カード2枚ドロー / 1ターンに一度のみ使用可'},
   {name:'超魔力吸収',  type:'skill', rarity:'epic',      cost:1, short:'次T マナ+3',          desc:'次のターン、マナ+3'},
   {name:'魔力解放',    type:'skill', rarity:'epic',      cost:0, short:'マナ+2 除外',         desc:'マナ+2 / 戦闘終了まで除外'},
-  {name:'凍結',        type:'skill', rarity:'epic',      cost:3, short:'敵1T行動不能',        desc:'敵を1ターン行動不能にする / 戦闘終了まで除外'},
+  {name:'凍結',        type:'skill', rarity:'epic',      cost:5, short:'敵1T行動不能',        desc:'敵を1ターン行動不能にする / 戦闘終了まで除外'},
   {name:'再利用',      type:'skill', rarity:'epic',      cost:1, short:'捨から選んで手札へ',  desc:'捨て札から1枚選んで手札に加える'},
   {name:'連鎖起動',    type:'skill', rarity:'epic',      cost:1, short:'次カード2回発動/以降スキル不可',desc:'次に使うカードを2回発動する / その後このターンスキルカードを使用不可'},
   {name:'大魔力解放',  type:'skill', rarity:'legendary', cost:0, short:'マナ+4 除外',         desc:'マナ+4 / 使用後除外 / 敵討伐後デッキに戻る'},
@@ -225,7 +227,7 @@ const CARDS = [
   {name:'残影',        type:'skill', rarity:'legendary', cost:1, short:'直前カード再発動',    desc:'直前に使ったカードと同じ効果を再び発動'},
   {name:'踏み倒し',    type:'skill', rarity:'legendary', cost:0, short:'次カードコスト0',     desc:'次に使用するカードのコストを0にする。1ターン1度のみ使用可。'},
   {name:'考え直し',    type:'skill', rarity:'legendary', cost:1, short:'選捨て+捨枚数+1ドロー',desc:'手札から好きな枚数捨てる + 捨てた枚数+1枚ドロー'},
-  {name:'解呪',        type:'skill', rarity:'legendary', cost:2, short:'妨害カード除外',      desc:'手札・山札・捨て札の妨害カードをすべて除外'},
+  {name:'浄化',        type:'skill', rarity:'legendary', cost:2, short:'妨害カード除外',      desc:'手札・山札・捨て札の妨害カードをすべて除外'},
   {name:'力溜め',      type:'skill', rarity:'gauge',     cost:1, short:'次T ドロー+1 マナ+1', desc:'次のターン開始時ドロー+1 / マナ+1'},
   {name:'魂食らい',    type:'skill', rarity:'gauge',     cost:0, short:'攻ダメ毎半分回復',    desc:'このターン攻撃でダメージを与えるたび、その半分をHP回復'},
   // curse

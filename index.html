@@ -24,10 +24,34 @@
   .filter-btn[data-type="bougai"].active{background:#883030;border-color:#883030;}
 
   /* 検索 */
-  .search-wrap{text-align:center;margin-bottom:12px;}
+  .search-wrap{text-align:center;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;}
   .search-wrap input{background:#fff;border:1px solid #bbb;color:#222;padding:5px 12px;border-radius:16px;font-size:12px;width:200px;outline:none;}
   .search-wrap input::placeholder{color:#aaa;}
   .search-wrap input:focus{border-color:#555;}
+  .search-wrap select{background:#fff;border:1px solid #bbb;color:#333;padding:5px 10px;border-radius:16px;font-size:11px;outline:none;cursor:pointer;}
+  .search-wrap select:focus{border-color:#555;}
+  #view-toggle{padding:5px 12px;border:1px solid #bbb;border-radius:16px;background:#fff;color:#333;cursor:pointer;font-size:11px;transition:all .15s;}
+  #view-toggle:hover{background:#e8e8ee;border-color:#888;}
+  #view-toggle.active{background:#444;border-color:#444;color:#fff;}
+
+  /* 件数内訳 */
+  .count-breakdown{text-align:center;color:#999;font-size:10px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:4px 10px;justify-content:center;}
+
+  /* カード表示（モバイル向け） */
+  .card-wrap{display:none;grid-template-columns:1fr;gap:8px;}
+  .card-wrap.show{display:grid;}
+  .table-wrap.hide{display:none;}
+  .card-item{background:#fff;border:1px solid #ddd;border-radius:10px;padding:10px 12px;}
+  .card-item-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px;}
+  .card-item-name{font-weight:700;color:#111;font-size:13px;}
+  .card-item-cost{font-weight:700;color:#444;font-size:13px;flex-shrink:0;}
+  .card-item-tags{display:flex;gap:6px;align-items:center;margin-bottom:6px;}
+  .card-item-short{color:#111;font-size:12px;font-weight:700;margin-bottom:3px;}
+  .card-item-desc{color:#555;font-size:11px;line-height:1.5;}
+
+  @media (max-width:600px){
+    .table-wrap{overflow-x:auto;}
+  }
 
   /* テーブル */
   .table-wrap{overflow-x:auto;}
@@ -57,7 +81,7 @@
   .r-epic{color:#6020a8;}
   .r-legendary{color:#a07000;}
   .r-gauge{color:#1a8048;}
-  .r-D{color:#c0392b;}
+  .r-hindrance{color:#c0392b;}
 
   .shortdesc{color:#111;font-size:12px;font-weight:700;}
   .fulldesc{color:#555;font-size:11px;line-height:1.5;}
@@ -72,7 +96,7 @@
   .rarity-btn[data-rarity="epic"].active{background:#6020a8;border-color:#6020a8;}
   .rarity-btn[data-rarity="legendary"].active{background:#a07000;border-color:#a07000;}
   .rarity-btn[data-rarity="gauge"].active{background:#1a8048;border-color:#1a8048;}
-  .rarity-btn[data-rarity="D"].active{background:#c0392b;border-color:#c0392b;}
+  .rarity-btn[data-rarity="hindrance"].active{background:#c0392b;border-color:#c0392b;}
   .cost-btn{padding:4px 12px;border:1px solid #bbb;border-radius:12px;background:#fff;color:#333;cursor:pointer;font-size:12px;font-weight:700;transition:all .15s;}
   .cost-btn:hover{background:#e8e8ee;border-color:#888;}
   .cost-btn.active{background:#444;border-color:#444;color:#fff;}
@@ -101,7 +125,7 @@
   <button class="rarity-btn" data-rarity="epic">エピック</button>
   <button class="rarity-btn" data-rarity="legendary">伝説</button>
   <button class="rarity-btn" data-rarity="gauge">ゲージ</button>
-  <button class="rarity-btn" data-rarity="D">妨害カード</button>
+  <button class="rarity-btn" data-rarity="hindrance">妨害カード</button>
 </div>
 <div style="text-align:center;font-size:10px;color:#888;margin-bottom:4px;margin-top:8px;">▼ コスト</div>
 <div class="filters" id="cost-filters">
@@ -116,11 +140,22 @@
 
   <div class="search-wrap">
     <input type="text" id="search" placeholder="カード名・省略文で検索…">
+    <select id="sort-select">
+      <option value="default">並び順: 標準</option>
+      <option value="cost-asc">コスト: 低い順</option>
+      <option value="cost-desc">コスト: 高い順</option>
+      <option value="rarity">レアリティ順</option>
+      <option value="name">名前順</option>
+    </select>
+    <button id="view-toggle" type="button">📱 カード表示</button>
   </div>
 
 <div class="count" id="count"></div>
+<div class="count-breakdown" id="count-breakdown"></div>
 
-<div class="table-wrap">
+<div class="card-wrap" id="card-wrap"></div>
+
+<div class="table-wrap" id="table-wrap">
 <table id="card-table">
 <thead>
   <tr>
@@ -244,34 +279,69 @@ const CARDS = [
   {name:'汚染世界',    type:'curse', rarity:'legendary', cost:1, short:'毒5+このT毒2倍',      desc:'毒+5 / このターンの毒ダメージを2倍にする'},
   {name:'呪詛返し',    type:'curse', rarity:'legendary', cost:3, short:'妨害除外:敵30ダメ',   desc:'妨害カードを1枚除外して発動 / 敵に30ダメージ'},
   // bougai
-  {name:'足枷',   type:'bougai', rarity:'D', cost:2, short:'コスト払い除外',      desc:'手札に来るたびコスト分マナを消費 / 除外して捨てることも可'},
-  {name:'火傷',   type:'bougai', rarity:'D', cost:1, short:'T終了5ダメ 捨可',     desc:'ターン終了時に自分5ダメージ / 捨て牌として捨てられる'},
-  {name:'脱力',   type:'bougai', rarity:'D', cost:3, short:'攻-50% 除外可',       desc:'攻撃力-50% / コストを払って除外できる'},
-  {name:'虚弱',   type:'bougai', rarity:'D', cost:3, short:'被ダメ+20 除外可',    desc:'受けるダメージ+20 / コストを払って除外できる'},
-  {name:'猛毒牙', type:'bougai', rarity:'D', cost:1, short:'入手時毒4 除外可',    desc:'入手時に自分に毒+4 / コストを払って除外できる'},
-  {name:'魂砕き', type:'bougai', rarity:'D', cost:2, short:'全コスト+1 除外可',   desc:'全カードのコスト+1 / コストを払って除外できる'},
+  {name:'足枷',   type:'bougai', rarity:'hindrance', cost:2, short:'コスト払い除外',      desc:'手札に来るたびコスト分マナを消費 / 除外して捨てることも可'},
+  {name:'火傷',   type:'bougai', rarity:'hindrance', cost:1, short:'T終了5ダメ 捨可',     desc:'ターン終了時に自分5ダメージ / 捨て牌として捨てられる'},
+  {name:'脱力',   type:'bougai', rarity:'hindrance', cost:3, short:'攻-50% 除外可',       desc:'攻撃力-50% / コストを払って除外できる'},
+  {name:'虚弱',   type:'bougai', rarity:'hindrance', cost:3, short:'被ダメ+20 除外可',    desc:'受けるダメージ+20 / コストを払って除外できる'},
+  {name:'猛毒牙', type:'bougai', rarity:'hindrance', cost:1, short:'入手時毒4 除外可',    desc:'入手時に自分に毒+4 / コストを払って除外できる'},
+  {name:'魂砕き', type:'bougai', rarity:'hindrance', cost:2, short:'全コスト+1 除外可',   desc:'全カードのコスト+1 / コストを払って除外できる'},
 ];
 
-const rarityOrder={common:0,uncommon:1,rare:2,epic:3,legendary:4,gauge:5,D:6};
-const rarityLabel={common:'コモン',uncommon:'アンコモン',rare:'レア',epic:'エピック',legendary:'伝説',gauge:'ゲージ',D:'妨害'};
+const rarityOrder={common:0,uncommon:1,rare:2,epic:3,legendary:4,gauge:5,hindrance:6};
+const rarityLabel={common:'コモン',uncommon:'アンコモン',rare:'レア',epic:'エピック',legendary:'伝説',gauge:'ゲージ',hindrance:'妨害'};
 const typeLabel={attack:'攻撃',shield:'防御',heal:'回復',skill:'スキル',curse:'呪い',bougai:'妨害'};
 
 let currentType = 'all';
 let currentRarity = 'all';
 let currentCost = 'all';
+let currentSort = 'default';
+let cardViewOn = false;
 
-function render(filterType, filterRarity, filterCost, searchText) {
+function sortCards(list, sortKey) {
+  const sorted = list.slice();
+  switch (sortKey) {
+    case 'cost-asc':
+      sorted.sort((a, b) => a.cost - b.cost);
+      break;
+    case 'cost-desc':
+      sorted.sort((a, b) => b.cost - a.cost);
+      break;
+    case 'rarity':
+      sorted.sort((a, b) => rarityOrder[a.rarity] - rarityOrder[b.rarity]);
+      break;
+    case 'name':
+      sorted.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+      break;
+    default:
+      // 標準（記述順）のまま
+      break;
+  }
+  return sorted;
+}
+
+function render(filterType, filterRarity, filterCost, searchText, sortKey) {
   const tbody = document.getElementById('tbody');
+  const cardWrap = document.getElementById('card-wrap');
   tbody.innerHTML = '';
-  let count = 0;
-  CARDS.forEach(c => {
+  cardWrap.innerHTML = '';
+
+  const s = searchText.toLowerCase();
+  let filtered = CARDS.filter(c => {
     const matchType   = filterType   === 'all' || c.type   === filterType;
     const matchRarity = filterRarity === 'all' || c.rarity === filterRarity;
     const matchCost   = filterCost   === 'all' || c.cost   === parseInt(filterCost);
-    const s = searchText.toLowerCase();
-    const matchSearch = !s || c.name.includes(s) || c.short.includes(s) || c.desc.includes(s);
-    if (!matchType || !matchRarity || !matchCost || !matchSearch) return;
-    count++;
+    const matchSearch = !s
+      || c.name.includes(s)
+      || c.short.includes(s)
+      || c.desc.includes(s)
+      || typeLabel[c.type].includes(s)
+      || rarityLabel[c.rarity].includes(s);
+    return matchType && matchRarity && matchCost && matchSearch;
+  });
+
+  filtered = sortCards(filtered, sortKey);
+
+  filtered.forEach(c => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="col-name">${c.name}</td>
@@ -282,8 +352,34 @@ function render(filterType, filterRarity, filterCost, searchText) {
       <td class="fulldesc">${c.desc}</td>
     `;
     tbody.appendChild(tr);
+
+    const div = document.createElement('div');
+    div.className = 'card-item';
+    div.innerHTML = `
+      <div class="card-item-head">
+        <span class="card-item-name">${c.name}</span>
+        <span class="card-item-cost">コスト ${c.cost}</span>
+      </div>
+      <div class="card-item-tags">
+        <span class="type-tag type-${c.type}">${typeLabel[c.type]}</span>
+        <span class="r-${c.rarity}">${rarityLabel[c.rarity]}</span>
+      </div>
+      <div class="card-item-short">${c.short}</div>
+      <div class="card-item-desc">${c.desc}</div>
+    `;
+    cardWrap.appendChild(div);
   });
-  document.getElementById('count').textContent = `${count} 件`;
+
+  document.getElementById('count').textContent = `${filtered.length} 件`;
+
+  // タイプ別の内訳を表示
+  const breakdown = {};
+  filtered.forEach(c => { breakdown[c.type] = (breakdown[c.type] || 0) + 1; });
+  const breakdownEl = document.getElementById('count-breakdown');
+  breakdownEl.innerHTML = Object.keys(typeLabel)
+    .filter(t => breakdown[t])
+    .map(t => `<span>${typeLabel[t]} ${breakdown[t]}</span>`)
+    .join('');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -292,7 +388,7 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentType = btn.dataset.type;
-    render(currentType, currentRarity, currentCost, document.getElementById('search').value);
+    render(currentType, currentRarity, currentCost, document.getElementById('search').value, currentSort);
   });
 });
 document.querySelectorAll('.rarity-btn').forEach(btn => {
@@ -300,7 +396,7 @@ document.querySelectorAll('.rarity-btn').forEach(btn => {
     document.querySelectorAll('.rarity-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentRarity = btn.dataset.rarity;
-    render(currentType, currentRarity, currentCost, document.getElementById('search').value);
+    render(currentType, currentRarity, currentCost, document.getElementById('search').value, currentSort);
   });
 });
 document.querySelectorAll('.cost-btn').forEach(btn => {
@@ -308,13 +404,27 @@ document.querySelectorAll('.cost-btn').forEach(btn => {
     document.querySelectorAll('.cost-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentCost = btn.dataset.cost;
-    render(currentType, currentRarity, currentCost, document.getElementById('search').value);
+    render(currentType, currentRarity, currentCost, document.getElementById('search').value, currentSort);
   });
 });
 document.getElementById('search').addEventListener('input', e => {
-  render(currentType, currentRarity, currentCost, e.target.value);
+  render(currentType, currentRarity, currentCost, e.target.value, currentSort);
 });
-render('all', 'all', 'all', '');
+document.getElementById('sort-select').addEventListener('change', e => {
+  currentSort = e.target.value;
+  render(currentType, currentRarity, currentCost, document.getElementById('search').value, currentSort);
+});
+document.getElementById('view-toggle').addEventListener('click', () => {
+  cardViewOn = !cardViewOn;
+  const toggleBtn = document.getElementById('view-toggle');
+  const tableWrap = document.getElementById('table-wrap');
+  const cardWrap = document.getElementById('card-wrap');
+  toggleBtn.classList.toggle('active', cardViewOn);
+  toggleBtn.textContent = cardViewOn ? '📊 表形式' : '📱 カード表示';
+  tableWrap.classList.toggle('hide', cardViewOn);
+  cardWrap.classList.toggle('show', cardViewOn);
+});
+render('all', 'all', 'all', '', 'default');
 });
 </script>
 </body>
